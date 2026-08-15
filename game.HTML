@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Угадай кто — Marvel Online</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a, #1a1a3e);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #f7c948, #f29b30);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(247, 201, 72, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #889;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.8fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: 0.3s;
+        }
+
+        .panel:hover {
+            border-color: rgba(247, 201, 72, 0.2);
+        }
+
+        .panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #f7c948;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 25px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 1rem;
+            outline: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 120px;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: 2px solid #f7c948;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .input-group input::placeholder {
+            color: #667;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 25px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: #f7c948;
+            color: #0a0a1a;
+        }
+
+        .btn-primary:hover {
+            background: #f5b81e;
+        }
+
+        .btn-success {
+            background: #2a9d8f;
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #21867a;
+        }
+
+        .btn-danger {
+            background: #c44545;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #a83232;
+        }
+
+        .btn-secondary {
+            background: #3a3b5a;
+            color: #ccc;
+        }
+
+        .btn-secondary:hover {
+            background: #4a4b6a;
+        }
+
+        .btn-purple {
+            background: #7c3aed;
+            color: #fff;
+        }
+
+        .btn-purple:hover {
+            background: #6d28d9;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status-box {
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            margin: 10px 0 15px;
+            font-size: 0.95rem;
+            border-left: 3px solid #f7c948;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-box .emoji {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .characters-grid {
+            max-height: 450px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+            padding: 5px;
+            margin: 10px 0;
+        }
+
+        .characters-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .characters-grid::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 10px;
+        }
+
+        .char-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            font-size: 0.85rem;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+
+        .char-item:hover {
+            background: rgba(247, 201, 72, 0.12);
+            border-color: rgba(247, 201, 72, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .char-item.selected {
+            background: rgba(247, 201, 72, 0.2);
+            border-color: #f7c948;
+            box-shadow: 0 0 20px rgba(247, 201, 72, 0.15);
+        }
+
+        .char-item.opponent {
+            background: rgba(42, 157, 143, 0.15);
+            border-color: #2a9d8f;
+        }
+
+        .chat-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            min-height: 250px;
+            margin-top: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 10px;
+        }
+
+        .msg {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.system {
+            color: #f7c948;
+        }
+
+        .msg.success {
+            color: #6fcf97;
+            font-weight: 600;
+        }
+
+        .msg.error {
+            color: #f28b82;
+        }
+
+        .msg.question {
+            color: #88ccff;
+        }
+
+        .msg.info {
+            color: #a78bfa;
+        }
+
+        .msg strong {
+            color: #fff;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .game-controls .btn {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .player-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .player-info .label {
+            color: #889;
+            font-size: 0.85rem;
+        }
+
+        .player-info .value {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-green {
+            background: #2a9d8f;
+            color: #fff;
+        }
+
+        .badge-yellow {
+            background: #f7c948;
+            color: #0a0a1a;
+        }
+
+        .badge-red {
+            background: #c44545;
+            color: #fff;
+        }
+
+        .copy-link {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .copy-link input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 500px) {
+            h1 { font-size: 2rem; }
+            .panel { padding: 15px; }
+            .characters-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🦸‍♂️ Угадай кто — Marvel</h1>
+    <div class="subtitle">Играйте с друзьями онлайн • 50 персонажей</div>
+
+    <div class="main-grid">
+        <!-- Левая панель: Управление -->
+        <div class="panel">
+            <h2>🎮 Подключение</h2>
+
+            <div id="connectPanel">
+                <div class="status-box" id="statusMessage">
+                    <span class="emoji">ℹ️</span>
+                    <span>Создайте комнату или подключитесь к существующей</span>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="roomInput" placeholder="ID комнаты (например: marvel123)" />
+                    <button class="btn btn-primary" id="createBtn">🚀 Создать</button>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="roomInputJoin" placeholder="ID комнаты для подключения" />
+                    <button class="btn btn-success" id="joinBtn">🔗 Подключиться</button>
+                </div>
+
+                <div class="copy-link">
+                    <input type="text" id="shareLink" readonly placeholder="Ссылка для приглашения" />
+                    <button class="btn btn-secondary" id="copyBtn">📋 Копировать</button>
+                </div>
+            </div>
+
+            <div id="gamePanel" class="hidden">
+                <div class="player-info">
+                    <div>
+                        <div class="label">Ваш ID</div>
+                        <div class="value" id="myIdDisplay">-</div>
+                    </div>
+                    <div>
+                        <div class="label">Комната</div>
+                        <div class="value" id="roomIdDisplay">-</div>
+                    </div>
+                    <div>
+                        <div class="label">Статус</div>
+                        <div class="value" id="gameStatus">Ожидание...</div>
+                    </div>
+                </div>
+
+                <div id="selectPanel">
+                    <p style="margin: 10px 0; color: #aab;">Выберите персонажа для оппонента:</p>
+                    <div class="characters-grid" id="characterList"></div>
+                    <div class="game-controls">
+                        <button class="btn btn-primary" id="confirmBtn" disabled>✅ Загадать</button>
+                        <button class="btn btn-danger" id="resetBtn">🔄 Сброс</button>
+                        <button class="btn btn-secondary" id="disconnectBtn">🚪 Выйти</button>
+                    </div>
+                </div>
+
+                <div id="gameplayPanel" class="hidden">
+                    <div class="status-box">
+                        <span class="emoji">🎯</span>
+                        <span>Угадайте: <strong id="targetDisplay">-</strong></span>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="questionInput" placeholder="Задайте вопрос (например: красный?)" />
+                        <button class="btn btn-purple" id="askBtn">❓ Спросить</button>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="guessInput" placeholder="Ваша догадка (имя)" />
+                        <button class="btn btn-success" id="guessBtn">⭐ Угадать</button>
+                    </div>
+
+                    <div class="game-controls">
+                        <button class="btn btn-danger" id="resetGameBtn">🔄 Новая игра</button>
+                        <button class="btn btn-secondary" id="disconnectGameBtn">🚪 Выйти</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая панель: Чат и список -->
+        <div class="panel">
+            <h2>📝 Лог игры</h2>
+            <div class="chat-box" id="chatBox">
+                <div class="msg system">🔄 Подключитесь к игре...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ====================================================
+//  ПОЛНЫЙ СПИСОК 50 ПЕРСОНАЖЕЙ MARVEL
+// ====================================================
+const ALL_CHARACTERS = [
+    "Железный человек", "Капитан Америка", "Тор", "Халк", "Чёрная вдова",
+    "Соколиный глаз", "Человек-паук", "Доктор Стрэндж", "Чёрная пантера", "Капитан Марвел",
+    "Страж", "Гамора", "Дракс", "Ракета", "Грут",
+    "Мантис", "Люди Икс", "Росомаха", "Шторм", "Циклоп",
+    "Джин Грей", "Ночной змей", "Магнето", "Профессор Икс", "Мистик",
+    "Веном", "Карнаж", "Зелёный гоблин", "Доктор Осьминог", "Локи",
+    "Танос", "Алая ведьма", "Ртуть", "Сокол", "Воин",
+    "Нова", "Адам Уорлок", "Бета Рей Билл", "Серебряный сёрфер", "Галактус",
+    "Кингпин", "Электра", "Джубилей", "Псайлок", "Архангел",
+    "Бишоп", "Кейбл", "Дэдпул", "Блэйд", "Призрачный гонщик"
+];
+
+// ====================================================
+//  P2P СОЕДИНЕНИЕ (PeerJS)
+// ====================================================
+let peer = null;
+let conn = null;
+let roomId = null;
+let selectedCharacter = null;
+let myCharacter = null;
+let opponentCharacter = null;
+let gameStarted = false;
+let isHost = false;
+let isConnected = false;
+let isReady = false;
+
+// DOM элементы
+const statusMessage = document.getElementById('statusMessage');
+const roomInput = document.getElementById('roomInput');
+const roomInputJoin = document.getElementById('roomInputJoin');
+const createBtn = document.getElementById('createBtn');
+const joinBtn = document.getElementById('joinBtn');
+const connectPanel = document.getElementById('connectPanel');
+const gamePanel = document.getElementById('gamePanel');
+const selectPanel = document.getElementById('selectPanel');
+const gameplayPanel = document.getElementById('gameplayPanel');
+const characterList = document.getElementById('characterList');
+const confirmBtn = document.getElementById('confirmBtn');
+const resetBtn = document.getElementById('resetBtn');
+const disconnectBtn = document.getElementById('disconnectBtn');
+const disconnectGameBtn = document.getElementById('disconnectGameBtn');
+const resetGameBtn = document.getElementById('resetGameBtn');
+const questionInput = document.getElementById('questionInput');
+const askBtn = document.getElementById('askBtn');
+const guessInput = document.getElementById('guessInput');
+const guessBtn = document.getElementById('guessBtn');
+const chatBox = document.getElementById('chatBox');
+const myIdDisplay = document.getElementById('myIdDisplay');
+const roomIdDisplay = document.getElementById('roomIdDisplay');
+const gameStatus = document.getElementById('gameStatus');
+const targetDisplay = document.getElementById('targetDisplay');
+const shareLink = document.getElementById('shareLink');
+const copyBtn = document.getElementById('copyBtn');
+
+// ====================================================
+//  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ====================================================
+function addMessage(text, type = '') {
+    const div = document.createElement('div');
+    div.className = `msg ${type}`;
+    div.innerHTML = text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function updateStatus(text, emoji = 'ℹ️') {
+    statusMessage.innerHTML = `<span class="emoji">${emoji}</span><span>${text}</span>`;
+}
+
+function setGameStatus(text) {
+    gameStatus.textContent = text;
+}
+
+function renderCharacters() {
+    characterList.innerHTML = '';
+    ALL_CHARACTERS.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'char-item';
+        div.textContent = name;
+        div.onclick = () => selectCharacter(name, div);
+        characterList.appendChild(div);
+    });
+}
+
+function selectCharacter(name, element) {
+    document.querySelectorAll('.char-item').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+    selectedCharacter = name;
+    confirmBtn.disabled = false;
+    addMessage(`👤 Выбран: <strong>${name}</strong>`, 'info');
+}
+
+function updateShareLink() {
+    if (roomId) {
+        const url = window.location.href.split('?')[0];
+        shareLink.value = `${url}?room=${roomId}`;
+    }
+}
+
+// ====================================================
+//  PEERJS ЛОГИКА
+// ====================================================
+function initPeer() {
+    peer = new Peer(undefined, {
+        debug: 2,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        }
+    });
+
+    peer.on('open', (id) => {
+        myIdDisplay.textContent = id;
+        addMessage(`🔗 Ваш ID: <strong>${id}</strong>`, 'system');
+        updateStatus('Введите ID комнаты для создания или подключения', '🔑');
+    });
+
+    peer.on('connection', (connection) => {
+        if (conn) {
+            connection.close();
+            return;
+        }
+        conn = connection;
+        setupConnection(connection);
+        isHost = false;
+        addMessage('👤 Кто-то подключился к вам!', 'system');
+        setGameStatus('Игрок подключен! Выберите персонажа');
+    });
+
+    peer.on('error', (err) => {
+        console.error('Peer error:', err);
+        addMessage(`⚠️ Ошибка: ${err.message}`, 'error');
+        if (err.type === 'unavailable-id') {
+            updateStatus('Этот ID уже занят. Попробуйте другой', '⚠️');
+        }
+    });
+
+    peer.on('disconnected', () => {
+        addMessage('🔌 Соединение разорвано', 'error');
+        resetGame();
+    });
+}
+
+function setupConnection(connection) {
+    conn = connection;
+    isConnected = true;
+    isReady = false;
+
+    conn.on('open', () => {
+        addMessage('✅ Соединение установлено!', 'success');
+        updateStatus('Соединение установлено! Выберите персонажа', '✅');
+        setGameStatus('Выберите персонажа');
+        gamePanel.classList.remove('hidden');
+        connectPanel.classList.add('hidden');
+        selectPanel.classList.remove('hidden');
+        gameplayPanel.classList.add('hidden');
+        renderCharacters();
+        updateShareLink();
+    });
+
+    conn.on('data', (data) => {
+        handlePeerData(data);
+    });
+
+    conn.on('close', () => {
+        addMessage('🔌 Соединение закрыто', 'error');
+        resetGame();
+    });
+}
+
+function handlePeerData(data) {
+    console.log('Получено:', data);
+
+    switch(data.type) {
+        case 'character':
+            opponentCharacter = data.character;
+            addMessage(`📌 Оппонент загадал персонажа`, 'info');
+            if (myCharacter && opponentCharacter) {
+                startGame();
+            }
+            break;
+
+        case 'question':
+            addMessage(`❓ Оппонент спрашивает: ${data.text}`, 'question');
+            // Автоответ (в реальной игре отвечает игрок)
+            setTimeout(() => {
+                const answer = Math.random() > 0.5 ? 'Да' : 'Нет';
+                sendToPeer({ type: 'answer', text: answer });
+                addMessage(`💬 Вы ответили: ${answer}`, 'system');
+            }, 1000);
+            break;
+
+        case 'answer':
+            addMessage(`💬 Ответ оппонента: ${data.text}`, 'system');
+            break;
+
+        case 'guess':
+            if (data.guess.toLowerCase() === opponentCharacter?.toLowerCase()) {
+                addMessage(`🎉 <strong>Правильно!</strong> Это ${opponentCharacter}!`, 'success');
+                sendToPeer({ type: 'win', character: opponentCharacter });
+                endGame(true);
+            } else {
+                addMessage(`❌ Неправильно. Попробуйте ещё`, 'error');
+                sendToPeer({ type: 'guess_result', correct: false });
+            }
+            break;
+
+        case 'win':
+            addMessage(`🏆 Оппонент угадал! Это был ${data.character}`, 'success');
+            endGame(false);
+            break;
+
+        case 'guess_result':
+            if (!data.correct) {
+                addMessage(`❌ Ваша догадка неверна`, 'error');
+            }
+            break;
+
+        case 'reset':
+            addMessage('🔄 Оппонент начал новую игру', 'system');
+            resetGameState();
+            break;
+
+        case 'disconnect':
+            addMessage('🚪 Оппонент вышел из игры', 'error');
+            resetGame();
+            break;
+
+        default:
+            addMessage(`📨 Получено: ${JSON.stringify(data)}`, 'system');
+    }
+}
+
+function sendToPeer(data) {
+    if (conn && conn.open) {
+        conn.send(data);
+    } else {
+        addMessage('⚠️ Нет соединения', 'error');
+    }
+}
+
+// ====================================================
+//  ИГРОВАЯ ЛОГИКА
+// ====================================================
+function startGame() {
+    gameStarted = true;
+    selectPanel.classList.add('hidden');
+    gameplayPanel.classList.remove('hidden');
+    targetDisplay.textContent = opponentCharacter || '?';
+    setGameStatus('Игра началась! Угадывайте');
+    addMessage('🎮 Игра началась! Угадайте персонажа оппонента', 'success');
+}
+
+function endGame(win) {
+    gameStarted = false;
+    if (win) {
+        addMessage('🏆 Вы победили!', 'success');
+        setGameStatus('Вы победили! 🎉');
+    } else {
+        addMessage('😞 Вы проиграли', 'error');
+        setGameStatus('Вы проиграли');
+    }
+    setTimeout(() => {
+        gameplayPanel.classList.add('hidden');
+        selectPanel.classList.remove('hidden');
+        myCharacter = null;
+        opponentCharacter = null;
+        setGameStatus('Новая игра? Выберите персонажа');
+        renderCharacters();
+    }, 2000);
+}
+
+function resetGameState() {
+    gameStarted = false;
+    myCharacter = null;
+    opponentCharacter = null;
+    selectedCharacter = null;
+    confirmBtn.disabled = true;
+    document.querySelectorAll('.char-item').forEach(el => el.classList.remove('selected'));
+    selectPanel.classList.remove('hidden');
+    gameplayPanel.classList.add('hidden');
+    setGameStatus('Выберите персонажа');
+    renderCharacters();
+}
+
+function resetGame() {
+    if (conn) {
+        conn.close();
+        conn = null;
+    }
+    isConnected = false;
+    isReady = false;
+    gameStarted = false;
+    myCharacter = null;
+    opponentCharacter = null;
+    selectedCharacter = null;
+    roomId = null;
+    gamePanel.classList.add('hidden');
+    connectPanel.classList.remove('hidden');
+    selectPanel.classList.remove('hidden');
+    gameplayPanel.classList.add('hidden');
+    updateStatus('Создайте или подключитесь к комнате', '🔑');
+    setGameStatus('Ожидание...');
+    renderCharacters();
+    chatBox.innerHTML = '<div class="msg system">🔄 Подключитесь к игре...</div>';
+}
+
+// ====================================================
+//  ОБРАБОТЧИКИ СОБЫТИЙ
+// ====================================================
+createBtn.onclick = () => {
+    const id = roomInput.value.trim() || 'marvel_' + Math.random().toString(36).substr(2, 6);
+    roomId = id;
+    roomIdDisplay.textContent = id;
+    isHost = true;
+
+    if (peer) {
+        peer.destroy();
+    }
+    initPeer();
+
+    // Ждем открытия peer
+    setTimeout(() => {
+        const connection = peer.connect(id);
+        setupConnection(connection);
+        addMessage(`🚀 Создана комната: <strong>${id}</strong>`, 'system');
+        updateStatus(`Комната создана! ID: ${id}`, '✅');
+        updateShareLink();
+    }, 1000);
+};
+
+joinBtn.onclick = () => {
+    const id = roomInputJoin.value.trim();
+    if (!id) {
+        addMessage('⚠️ Введите ID комнаты', 'error');
+        return;
+    }
+    roomId = id;
+    roomIdDisplay.textContent = id;
+    isHost = false;
+
+    if (peer) {
+        peer.destroy();
+    }
+    initPeer();
+
+    setTimeout(() => {
+        const connection = peer.connect(id);
+        setupConnection(connection);
+        addMessage(`🔗 Подключение к комнате: <strong>${id}</strong>`, 'system');
+        updateStatus(`Подключение к ${id}...`, '⏳');
+        updateShareLink();
+    }, 1000);
+};
+
+confirmBtn.onclick = () => {
+    if (!selectedCharacter) {
+        addMessage('⚠️ Выберите персонажа', 'error');
+        return;
+    }
+    myCharacter = selectedCharacter;
+    sendToPeer({ type: 'character', character: myCharacter });
+    addMessage(`✅ Вы загадали: <strong>${myCharacter}</strong>`, 'success');
+    confirmBtn.disabled = true;
+    setGameStatus('Ожидаем оппонента...');
+
+    if (opponentCharacter) {
+        startGame();
+    }
+};
+
+resetBtn.onclick = () => {
+    sendToPeer({ type: 'reset' });
+    resetGameState();
+    addMessage('🔄 Игра сброшена', 'system');
+};
+
+resetGameBtn.onclick = () => {
+    sendToPeer({ type: 'reset' });
+    resetGameState();
+    addMessage('🔄 Новая игра начата', 'system');
+};
+
+disconnectBtn.onclick = () => {
+    sendToPeer({ type: 'disconnect' });
+    resetGame();
+};
+
+disconnectGameBtn.onclick = () => {
+    sendToPeer({ type: 'disconnect' });
+    resetGame();
+};
+
+askBtn.onclick = () => {
+    const question = questionInput.value.trim();
+    if (!question) {
+        addMessage('⚠️ Введите вопрос', 'error');
+        return;
+    }
+    if (!gameStarted) {
+        addMessage('⚠️ Игра ещё не началась', 'error');
+        return;
+    }
+    sendToPeer({ type: 'question', text: question });
+    addMessage(`❓ Вы спросили: ${question}`, 'question');
+    questionInput.value = '';
+};
+
+guessBtn.onclick = () => {
+    const guess = guessInput.value.trim();
+    if (!guess) {
+        addMessage('⚠️ Введите имя', 'error');
+        return;
+    }
+    if (!gameStarted) {
+        addMessage('⚠️ Игра не начата', 'error');
+        return;
+    }
+    sendToPeer({ type: 'guess', guess: guess });
+    guessInput.value = '';
+};
+
+copyBtn.onclick = () => {
+    shareLink.select();
+    document.execCommand('copy');
+    addMessage('📋 Ссылка скопирована!', 'success');
+};
+
+// Enter для полей
+roomInput.onkeydown = (e) => { if (e.key === 'Enter') createBtn.click(); };
+roomInputJoin.onkeydown = (e) => { if (e.key === 'Enter') joinBtn.click(); };
+questionInput.onkeydown = (e) => { if (e.key === 'Enter') askBtn.click(); };
+guessInput.onkeydown = (e) => { if (e.key === 'Enter') guessBtn.click(); };
+
+// ====================================================
+//  АВТОМАТИЧЕСКОЕ ПОДКЛЮЧЕНИЕ ПО URL
+// ====================================================
+window.onload = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const room = urlParams.get('room');
+    if (room) {
+        roomInputJoin.value = room;
+        setTimeout(() => joinBtn.click(), 500);
+    }
+};
+
+// ====================================================
+//  ИНИЦИАЛИЗАЦИЯ
+// ====================================================
+renderCharacters();
+updateStatus('Создайте или подключитесь к комнате', '🔑');
+
+// Если Peer не инициализирован, делаем это
+if (!peer) {
+    initPeer();
+}
+
+console.log('🦸‍♂️ Угадай кто — Marvel Online загружен!');
+console.log(`📋 Всего персонажей: ${ALL_CHARACTERS.length}`);
+</script>
+</body>
+</html>
